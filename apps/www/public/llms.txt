@@ -1,0 +1,150 @@
+# Thrum
+
+> A framework-agnostic node-and-edge graph library for building visual flow editors, pipeline builders, and diagram tools.
+
+Thrum ships a headless core (`@thrum/core`) with a first-class SolidJS adapter (`@thrum/solid`).
+
+## Packages
+
+- **@thrum/core** — the store, types, edge-path functions, hit-testing, serialization, and history. Zero DOM dependencies.
+- **@thrum/solid** — SolidJS components and hooks that bind the store to a reactive, interactive canvas.
+
+## Installation
+
+```bash
+bun install @thrum/core @thrum/solid
+```
+
+## Core Concepts
+
+The central object is **FlowStore**, created by `createFlowStore()`. All mutations go through the store; UI components subscribe reactively.
+
+### Store
+
+```typescript
+import { createFlowStore, nodeId, edgeId } from "@thrum/core";
+
+const store = createFlowStore({
+  nodes: [
+    { id: nodeId("a"), position: { x: 0, y: 0 }, data: { label: "Node A" } },
+    { id: nodeId("b"), position: { x: 200, y: 100 }, data: { label: "Node B" } },
+  ],
+  edges: [{ id: edgeId("a-b"), source: nodeId("a"), target: nodeId("b") }],
+});
+```
+
+### SolidJS Setup
+
+Wrap your canvas in `Flow.Root` to provide context. Compose `Flow.NodeLayer` and `Flow.EdgeLayer` inside `Flow.Canvas`.
+
+```tsx
+import { Flow } from "@thrum/solid";
+import { createFlowStore, edgeId } from "@thrum/core";
+
+function App() {
+  const store = createFlowStore();
+
+  return (
+    <Flow.Root store={store} onConnect={(c) => store.addEdge({ ...c, id: edgeId() })}>
+      <Flow.Canvas>
+        <Flow.NodeLayer>
+          {(node) => (
+            <Flow.Node node={node}>
+              <div class="node">{node.data.label}</div>
+            </Flow.Node>
+          )}
+        </Flow.NodeLayer>
+        <Flow.EdgeLayer>
+          {(edge, coords) => <path d={getBezierPath(coords).path} fill="none" stroke="#888" />}
+        </Flow.EdgeLayer>
+      </Flow.Canvas>
+    </Flow.Root>
+  );
+}
+```
+
+### Handles
+
+Handles are the connection points on nodes. Place them inside a `Flow.Node` with a `type` of `source` or `target` and a `position`.
+
+```tsx
+<Flow.Handle type="target" position="left" />
+<Flow.Handle type="source" position="right" />
+```
+
+### Edge Paths
+
+Edge path functions convert source/target coordinates into SVG path strings.
+
+```typescript
+import { getBezierPath, getStraightPath, getSmoothStepPath } from "@thrum/core";
+
+const { path, labelX, labelY } = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+const { path } = getStraightPath({ sourceX, sourceY, targetX, targetY });
+const { path } = getSmoothStepPath({ sourceX, sourceY, targetX, targetY });
+```
+
+### Connection Validation
+
+```typescript
+import { wouldCreateCycle } from "@thrum/core";
+
+const store = createFlowStore({
+  isValidConnection(connection, state) {
+    if (connection.source === connection.target) return false;
+    return !wouldCreateCycle(connection, [...state.edges.values()]);
+  },
+});
+```
+
+### Hooks
+
+```typescript
+import { useFlow, useLiveNode } from "@thrum/solid";
+
+// Access the store from anywhere inside <Flow.Root>
+const { store } = useFlow();
+
+// Inside a custom node — get a reactive snapshot
+const node = useLiveNode<{ label: string }>();
+```
+
+### History (Undo/Redo)
+
+```typescript
+import { History } from "@thrum/core";
+
+const history = new History(50);
+history.push({ undo: { nodeChanges: [...], edgeChanges: [] }, redo: { nodeChanges: [...], edgeChanges: [] } });
+const changes = history.undo();
+```
+
+### Serialization
+
+```typescript
+import { serializeFlow, deserializeFlow, flowToString, flowFromString } from "@thrum/core";
+
+const json = serializeFlow(store);
+localStorage.setItem("flow", flowToString(json));
+```
+
+## Core Exports
+
+Types: NodeId, EdgeId, HandleId, XY, Rect, HandleType, HandlePosition, HandleBounds, HandleRect, Connection, NodeBase, InternalNode, EdgeBase, Viewport, NodeChange, EdgeChange, StoreChangeSet, EdgePathParams, EdgePathResult, EdgePathFunction, FitViewOptions, ActiveConnection, FlowStoreState, FlowStore, NodeTypeDefinition, SerializedNode, SerializedEdge, FlowJSON
+
+Functions: createFlowStore, wouldCreateCycle, nodeId, edgeId, handleId, getBezierPath, getSmoothStepPath, getStepPath, getStraightPath, registerEdgePath, getEdgePath, computeHandleBounds, resolveHandleCenter, createDragState, computeDragPosition, getNodesInBox, hitTestNode, serializeFlow, deserializeFlow, flowToString, flowFromString, screenToFlow, flowToScreen, clampZoom, zoomAroundPoint
+
+Classes: History
+
+## Solid Adapter Exports
+
+Components: Flow (Flow.Root, Flow.Canvas, Flow.NodeLayer, Flow.EdgeLayer, Flow.Node, Flow.Handle, Flow.ConnectionLine)
+Hooks: useFlow, useNodeId, useLiveNode, createNodeDrag, createBoxSelection, createFlowContextValue
+
+## Links
+
+- Homepage: https://thrum.knst.dev
+- GitHub: https://github.com/knst0/thrum
+- npm (core): https://www.npmjs.com/package/@thrum/core
+- npm (solid): https://www.npmjs.com/package/@thrum/solid
+- License: MIT OR Apache-2.0

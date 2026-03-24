@@ -1,0 +1,41 @@
+{
+  "name": "@thrum/core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic headless core for building node-and-edge graph editors, flow builders, and diagram tools",
+  "keywords": [
+    "dag",
+    "diagram",
+    "flow",
+    "graph",
+    "headless",
+    "node-editor",
+    "typescript"
+  ],
+  "homepage": "https://thrum.knst.dev",
+  "license": "MIT OR Apache-2.0",
+  "author": "knst0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/knst0/thrum.git",
+    "directory": "packages/core"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "sideEffects": false,
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "tsc --noEmit",
+    "dev": "tsdown --watch"
+  }
+}

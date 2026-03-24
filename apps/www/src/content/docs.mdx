@@ -1,0 +1,174 @@
+## Installation
+
+```bash
+bun install @thrum/core @thrum/solid
+```
+
+## Concepts
+
+thrum is split into two packages:
+
+- **@thrum/core** — the store, types, edge-path functions, hit-testing, serialization, and history. Zero DOM dependencies.
+- **@thrum/solid** — SolidJS components and hooks that bind the store to a reactive, interactive canvas.
+
+The central object is **FlowStore**, created by `createFlowStore()`. All mutations go through the store; components subscribe reactively.
+
+## Store
+
+Create a store with optional initial nodes and edges. Every ID is a _branded type_ — use the provided factories to avoid mixing them up.
+
+```typescript
+import { createFlowStore, nodeId, edgeId } from "@thrum/core";
+
+const store = createFlowStore({
+  nodes: [
+    { id: nodeId("a"), position: { x: 0, y: 0 }, data: { label: "Node A" } },
+    { id: nodeId("b"), position: { x: 200, y: 100 }, data: { label: "Node B" } },
+  ],
+  edges: [{ id: edgeId("a-b"), source: nodeId("a"), target: nodeId("b") }],
+});
+```
+
+## SolidJS setup
+
+Wrap your canvas in `Flow.Root` to provide context. Compose `Flow.NodeLayer` and `Flow.EdgeLayer` inside `Flow.Canvas`.
+
+```tsx
+import { Flow } from "@thrum/solid";
+import { createFlowStore } from "@thrum/core";
+
+function App() {
+  const store = createFlowStore();
+
+  return (
+    <Flow.Root store={store} onConnect={(c) => store.addEdge({ ...c, id: edgeId() })}>
+      <Flow.Canvas>
+        <Flow.NodeLayer>
+          {(node) => (
+            <Flow.Node node={node}>
+              <div class="node">{node.data.label}</div>
+            </Flow.Node>
+          )}
+        </Flow.NodeLayer>
+        <Flow.EdgeLayer>{(edge, coords) => <path d={getBezierPath(coords).path} fill="none" stroke="#888" />}</Flow.EdgeLayer>
+      </Flow.Canvas>
+    </Flow.Root>
+  );
+}
+```
+
+## Handles
+
+Handles are the connection points on nodes. Place them inside a `Flow.Node` with a `type` of `source` or `target` and a `position`. Drag from a source handle to a target handle to create an edge.
+
+```tsx
+import { Flow } from "@thrum/solid";
+
+// Inside a custom node component
+function MyNode() {
+  return (
+    <div class="node">
+      <Flow.Handle type="target" position="left" />
+      <span>My Node</span>
+      <Flow.Handle type="source" position="right" />
+    </div>
+  );
+}
+```
+
+## Edge paths
+
+Edge path functions convert source/target coordinates into SVG path strings. The result also includes `labelX` / `labelY` for placing a label at the midpoint.
+
+```typescript
+import { getBezierPath, getStraightPath, getSmoothStepPath } from "@thrum/core";
+
+// Bezier curve (default)
+const { path, labelX, labelY } = getBezierPath({
+  sourceX,
+  sourceY,
+  sourcePosition,
+  targetX,
+  targetY,
+  targetPosition,
+});
+
+// Straight line
+const { path } = getStraightPath({ sourceX, sourceY, targetX, targetY });
+
+// Step / smooth-step
+const { path } = getSmoothStepPath({ sourceX, sourceY, targetX, targetY });
+```
+
+## Connection validation
+
+Pass `isValidConnection` to `createFlowStore` to reject connections. `wouldCreateCycle` checks for directed cycles.
+
+```typescript
+const store = createFlowStore({
+  isValidConnection(connection, state) {
+    // Prevent self-loops
+    if (connection.source === connection.target) return false;
+    // Prevent cycles
+    return !wouldCreateCycle(connection, [...state.edges.values()]);
+  },
+});
+```
+
+## Hooks
+
+Access the store and reactive node state from anywhere inside `Flow.Root`.
+
+```typescript
+import { useFlow, useNodeId, useLiveNode } from "@thrum/solid";
+
+// Access the store from anywhere inside <Flow.Root>
+function Toolbar() {
+  const { store } = useFlow();
+  return <button onClick={() => store.fitView()}>Fit view</button>;
+}
+
+// Inside a custom node — get a reactive snapshot of the current node
+function MyNode() {
+  const node = useLiveNode<{ label: string }>();
+  return <div>{node().data.label}</div>;
+}
+```
+
+## History
+
+The `History` class is a standalone undo/redo stack. Build change-sets manually or derive them before/after mutations.
+
+```typescript
+import { History } from "@thrum/core";
+
+const history = new History(50); // max 50 steps
+
+// Push a snapshot before a change
+history.push({
+  undo: { nodeChanges: [{ type: "remove", id }], edgeChanges: [] },
+  redo: { nodeChanges: [{ type: "add", node }], edgeChanges: [] },
+});
+
+// Undo / redo
+const changes = history.undo();
+if (changes) store.applyNodeChanges(changes.nodeChanges);
+```
+
+## Serialization
+
+Serialize and restore the full graph (nodes, edges, viewport) to a versioned JSON format.
+
+```typescript
+import { serializeFlow, deserializeFlow, flowToString } from "@thrum/core";
+
+// Serialize to a plain object
+const json = serializeFlow(store);
+
+// Persist as a string
+localStorage.setItem("flow", flowToString(json));
+
+// Restore
+const saved = localStorage.getItem("flow");
+if (saved) deserializeFlow(store, flowFromString(saved));
+```

@@ -1,0 +1,52 @@
+{
+  "name": "@thrum/solid",
+  "version": "0.1.0",
+  "description": "SolidJS adapter for @thrum/core — reactive bindings for building node-and-edge graph editors",
+  "keywords": [
+    "dag",
+    "diagram",
+    "flow",
+    "graph",
+    "node-editor",
+    "solid-js",
+    "solidjs",
+    "typescript"
+  ],
+  "homepage": "https://thrum.knst.dev",
+  "license": "MIT OR Apache-2.0",
+  "author": "knst0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/knst0/thrum.git",
+    "directory": "packages/solid-adapter"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "sideEffects": false,
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "tsc --noEmit",
+    "dev": "tsdown --watch"
+  },
+  "dependencies": {
+    "@thrum/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@rolldown-plugin/solid": "^0.0.3",
+    "solid-js": "^1.9.11"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9"
+  }
+}

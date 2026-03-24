@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter './packages/*' build",
+    "fmt": "oxfmt",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
+    "tsdown": "^0.21.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.0"
+  }
+}
