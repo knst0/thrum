@@ -119,7 +119,7 @@ const store = createFlowStore({
 
 Access the store and reactive node state from anywhere inside `Flow.Root`.
 
-```typescript
+```tsx
 import { useFlow, useNodeId, useLiveNode } from "@thrum/solid";
 
 // Access the store from anywhere inside <Flow.Root>
@@ -160,15 +160,11 @@ if (changes) store.applyNodeChanges(changes.nodeChanges);
 Serialize and restore the full graph (nodes, edges, viewport) to a versioned JSON format.
 
 ```typescript
-import { serializeFlow, deserializeFlow, flowToString } from "@thrum/core";
+import { serializeFlow, deserializeFlow } from "@thrum/core";
 
 // Serialize to a plain object
 const json = serializeFlow(store);
 
-// Persist as a string
-localStorage.setItem("flow", flowToString(json));
-
 // Restore
-const saved = localStorage.getItem("flow");
-if (saved) deserializeFlow(store, flowFromString(saved));
+deserializeFlow(store, json);
 ```

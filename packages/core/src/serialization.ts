@@ -86,17 +86,3 @@ export function deserializeFlow(store: FlowStore, json: FlowJSON): void {
     store.setViewport(json.viewport);
   });
 }
-
-export function flowToString(store: FlowStore): string {
-  return JSON.stringify(serializeFlow(store));
-}
-
-export function flowFromString(store: FlowStore, jsonString: string): void {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonString);
-  } catch (e) {
-    throw new Error(`Invalid JSON string: ${e instanceof Error ? e.message : String(e)}`);
-  }
-  deserializeFlow(store, parsed as FlowJSON);
-}

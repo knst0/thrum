@@ -6,12 +6,12 @@
   ],
   "scripts": {
     "build": "bun run --filter './packages/*' build",
-    "prepublish": "bun run build",
-    "publish:core": "bun publish --access public --cwd packages/core/",
-    "publish:solid": "bun publish --access public --cwd packages/solid-adapter/",
     "fmt": "oxfmt",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "prepublish": "bun run build",
+    "publish:core": "bun publish --access public --cwd packages/core/",
+    "publish:solid": "bun publish --access public --cwd packages/solid-adapter/",
     "test": "vitest run"
   },
   "devDependencies": {

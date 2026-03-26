@@ -3,7 +3,7 @@ import type { HandleType } from "@thrum/core";
 import { handleId as toHandleId } from "@thrum/core";
 import { useFlow, useNodeId } from "../context";
 
-interface FlowHandleProps {
+export interface FlowHandleProps {
   type: HandleType;
   /** Plain string for JSX ergonomics; branded internally at the boundary. */
   id?: string;
@@ -97,4 +97,8 @@ export function FlowHandle(props: FlowHandleProps) {
       onPointerLeave={onPointerLeave}
     />
   );
+}
+
+export namespace FlowHandle {
+  export type Props = FlowHandleProps;
 }

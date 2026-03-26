@@ -2,7 +2,7 @@ import { getBezierPath, createFlowStore, nodeId, edgeId, handleId } from "@thrum
 import { Flow, useLiveNode } from "@thrum/solid";
 import type { EdgeCoords } from "@thrum/solid";
 import type { EdgeBase, Connection } from "@thrum/core";
-import type { JSX } from "solid-js";
+import clsx from "clsx";
 
 const store = createFlowStore({
   nodes: [
@@ -15,49 +15,25 @@ const store = createFlowStore({
     { id: edgeId("1"), source: nodeId("input"), sourceHandle: handleId("out"), target: nodeId("process"), targetHandle: handleId("in") },
     { id: edgeId("2"), source: nodeId("input"), sourceHandle: handleId("out"), target: nodeId("filter"), targetHandle: handleId("in") },
     { id: edgeId("3"), source: nodeId("process"), sourceHandle: handleId("out"), target: nodeId("output"), targetHandle: handleId("in") },
-    { id: edgeId("4"), source: nodeId("filter"), sourceHandle: handleId("out"), target: nodeId("output"), targetHandle: handleId("in") },
   ],
 });
 
-const handleStyle: JSX.CSSProperties = {
-  position: "absolute",
-  width: "10px",
-  height: "10px",
-  "border-radius": "50%",
-  background: "var(--color-gray-8)",
-  border: "2px solid var(--color-gray-6)",
-  cursor: "crosshair",
-};
+const handleClass =
+  "absolute size-2.5 rounded-full bg-(--color-gray-8) border-2 border-(--color-gray-6) cursor-crosshair";
 
 function NodeContent() {
   const node = useLiveNode<{ label: string }>();
   return (
     <div
-      style={{
-        padding: "8px 14px",
-        background: node().selected ? "var(--color-gray-5)" : "var(--color-gray-3)",
-        border: `1px solid ${node().selected ? "var(--color-gray-8)" : "var(--color-gray-6)"}`,
-        "border-radius": "6px",
-        color: "var(--color-gray-12)",
-        "font-size": "13px",
-        "white-space": "nowrap",
-        cursor: node().dragging ? "grabbing" : "grab",
-        "user-select": "none",
-        position: "relative",
-        transition: "background 0.1s, border-color 0.1s",
-      }}
+      class={clsx(
+        "px-3.5 py-2 rounded-md text-[13px] text-(--color-gray-12) whitespace-nowrap select-none relative transition-[background,border-color] duration-100",
+        node().selected ? "bg-(--color-gray-5) border border-(--color-gray-8)" : "bg-(--color-gray-3) border border-(--color-gray-6)",
+        node().dragging ? "cursor-grabbing" : "cursor-grab",
+      )}
     >
-      <Flow.Handle
-        type="target"
-        id="in"
-        style={{ ...handleStyle, left: "-6px", top: "50%", transform: "translateY(-50%)" }}
-      />
+      <Flow.Handle type="target" id="in" class={clsx(handleClass, "-left-1.5 top-1/2 -translate-y-1/2")} />
       {node().data.label}
-      <Flow.Handle
-        type="source"
-        id="out"
-        style={{ ...handleStyle, right: "-6px", top: "50%", transform: "translateY(-50%)", background: "var(--color-gray-11)" }}
-      />
+      <Flow.Handle type="source" id="out" class={clsx(handleClass, "-right-1.5 top-1/2 -translate-y-1/2 bg-(--color-gray-11)")} />
     </div>
   );
 }
@@ -70,7 +46,7 @@ function ShowcaseEdge(_edge: EdgeBase, coords: EdgeCoords, selected: boolean) {
       stroke={selected ? "var(--color-gray-11)" : "var(--color-gray-7)"}
       stroke-width={selected ? "2" : "1.5"}
       fill="none"
-      style={{ "pointer-events": "none" }}
+      class="pointer-events-none"
     />
   );
 }
@@ -102,32 +78,13 @@ export function ShowcasePlayground() {
       <button
         onClick={() => store.fitView({ padding: 0.2 })}
         title="Fit view"
-        style={{
-          position: "absolute",
-          bottom: "10px",
-          right: "10px",
-          width: "28px",
-          height: "28px",
-          display: "flex",
-          "align-items": "center",
-          "justify-content": "center",
-          background: "var(--color-gray-3)",
-          border: "1px solid var(--color-gray-6)",
-          "border-radius": "6px",
-          cursor: "pointer",
-          color: "var(--color-gray-11)",
-          "z-index": "10",
-          padding: "0",
-          transition: "background 0.1s, color 0.1s",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "var(--color-gray-5)";
-          (e.currentTarget as HTMLButtonElement).style.color = "var(--color-gray-12)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "var(--color-gray-3)";
-          (e.currentTarget as HTMLButtonElement).style.color = "var(--color-gray-11)";
-        }}
+        class={clsx(
+          "absolute bottom-2.5 right-2.5 w-7 h-7 flex items-center justify-center",
+          "bg-(--color-gray-3) border border-(--color-gray-6) rounded-md",
+          "cursor-pointer text-(--color-gray-11) z-10 p-0",
+          "transition-[background,color] duration-100",
+          "hover:bg-(--color-gray-5) hover:text-(--color-gray-12)",
+        )}
       >
         <svg
           width="14"

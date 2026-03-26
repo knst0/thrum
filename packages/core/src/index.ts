@@ -40,7 +40,7 @@ export { createDragState, computeDragPosition } from "./drag";
 export type { DragState, DragContext } from "./drag";
 export { getNodesInBox, hitTestNode } from "./store/selection";
 export type { BoxSelection } from "./store/selection";
-export { serializeFlow, deserializeFlow, flowToString, flowFromString } from "./serialization";
+export { serializeFlow, deserializeFlow } from "./serialization";
 export { History } from "./history";
 export type { HistoryEntry, HistoryChangeset } from "./history";
 

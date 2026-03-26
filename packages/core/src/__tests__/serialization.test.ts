@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { nodeId, edgeId } from "../types";
 import { createFlowStore } from "../store";
-import { serializeFlow, deserializeFlow, flowToString, flowFromString } from "../serialization";
+import { serializeFlow, deserializeFlow } from "../serialization";
 import type { FlowJSON } from "../types";
 
 function makeStore() {
@@ -41,24 +41,6 @@ describe("serializeFlow / deserializeFlow", () => {
     const store2 = createFlowStore();
     deserializeFlow(store2, json);
     expect(store2.getState().viewport).toEqual({ x: 50, y: -30, zoom: 1.5 });
-  });
-});
-
-describe("flowToString / flowFromString", () => {
-  it("round-trips through JSON string", () => {
-    const store = makeStore();
-    const str = flowToString(store);
-    expect(typeof str).toBe("string");
-
-    const store2 = createFlowStore();
-    flowFromString(store2, str);
-    expect(store2.getState().nodes.size).toBe(2);
-    expect(store2.getState().edges.size).toBe(1);
-  });
-
-  it("throws on invalid JSON string", () => {
-    const store = createFlowStore();
-    expect(() => flowFromString(store, "not-json{{{")).toThrow("Invalid JSON string");
   });
 });
 
