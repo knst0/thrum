@@ -33,14 +33,19 @@ const store = createFlowStore({
     { id: edgeId("3"), source: nodeId("process"), sourceHandle: handleId("out"), target: nodeId("output"), targetHandle: handleId("in") },
   ],
   plugins: [selectionPlugin()],
-  isValidConnection: (connection, state) =>
-    ![...state.edges.values()].some(
-      (e) =>
-        e.source === connection.source &&
-        (e.sourceHandle ?? null) === connection.sourceHandle &&
-        e.target === connection.target &&
-        (e.targetHandle ?? null) === connection.targetHandle,
-    ),
+  isValidConnection: (connection, state) => {
+    const edges = [...state.edges.values()];
+
+    const sourceOccupied = edges.some(
+      (e) => e.source === connection.source && (e.sourceHandle ?? null) === connection.sourceHandle
+    );
+
+    const targetOccupied = edges.some(
+      (e) => e.target === connection.target && (e.targetHandle ?? null) === connection.targetHandle
+    );
+
+    return !sourceOccupied && !targetOccupied;
+  }
 });
 
 const handleClass = "absolute size-2.5 rounded-full bg-(--color-gray-8) border-2 border-(--color-gray-6) cursor-crosshair";
@@ -136,6 +141,7 @@ export function ShowcasePlayground() {
             </Flow.Node>
           )}
         </Flow.NodeLayer>
+        <Flow.SelectionArea />
       </Flow.Canvas>
       <button
         onClick={() => store.fitView({ padding: 0.2 })}
