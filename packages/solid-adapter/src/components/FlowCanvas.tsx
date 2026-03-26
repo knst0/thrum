@@ -1,4 +1,4 @@
-import { Show, onCleanup, onMount } from "solid-js";
+import { Show, createSignal, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { useFlow } from "../context";
 import { createBoxSelection } from "../hooks/createBoxSelection";
@@ -16,6 +16,8 @@ export function FlowCanvas(props: FlowCanvasProps) {
   let ref!: HTMLDivElement;
   let isPanning = false;
   let lastPan = { x: 0, y: 0 };
+  const activeTouchPointers = new Map<number, { x: number; y: number }>();
+  const [isPinching, setIsPinching] = createSignal(false);
 
   function isBackground(target: EventTarget | null): boolean {
     let el = target as Element | null;
@@ -38,6 +40,23 @@ export function FlowCanvas(props: FlowCanvasProps) {
 
   function onPointerDown(e: PointerEvent) {
     ref.focus({ preventScroll: true });
+
+    if (e.pointerType === "touch") {
+      activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activeTouchPointers.size >= 2) {
+        // Second finger down → pinch gesture
+        isPanning = false;
+        setIsPinching(true);
+        return;
+      }
+      // Single finger → pan
+      isPanning = true;
+      lastPan = { x: e.clientX, y: e.clientY };
+      ref.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+
     if (e.button === 1) {
       // Middle mouse → pan
       isPanning = true;
@@ -46,6 +65,7 @@ export function FlowCanvas(props: FlowCanvasProps) {
       e.preventDefault();
       return;
     }
+
     if (e.button === 0 && isBackground(e.target)) {
       // Left drag on background → box selection
       boxSel.onPointerDown(e);
@@ -55,6 +75,10 @@ export function FlowCanvas(props: FlowCanvasProps) {
 
   let connectionRaf = 0;
   function onPointerMove(e: PointerEvent) {
+    if (e.pointerType === "touch") {
+      activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    if (isPinching()) return;
     if (isPanning) {
       const vp = store.getState().viewport;
       store.setViewport({ ...vp, x: vp.x + e.clientX - lastPan.x, y: vp.y + e.clientY - lastPan.y });
@@ -69,13 +93,24 @@ export function FlowCanvas(props: FlowCanvasProps) {
     }
   }
 
+  function removeTouchPointer(pointerId: number) {
+    activeTouchPointers.delete(pointerId);
+    if (activeTouchPointers.size < 2) setIsPinching(false);
+  }
+
   function onPointerUp(e: PointerEvent) {
+    if (e.pointerType === "touch") removeTouchPointer(e.pointerId);
     if (isPanning) {
       isPanning = false;
       return;
     }
     boxSel.onPointerUp(e);
     store.cancelConnection();
+  }
+
+  function onPointerCancel(e: PointerEvent) {
+    if (e.pointerType === "touch") removeTouchPointer(e.pointerId);
+    isPanning = false;
   }
 
   onMount(() => {
@@ -92,10 +127,17 @@ export function FlowCanvas(props: FlowCanvasProps) {
     <div
       ref={ref}
       tabIndex={0}
-      style={{ position: "absolute", inset: "0", overflow: "hidden", outline: "none", ...props.style }}
+      style={{
+        position: "absolute",
+        inset: "0",
+        overflow: "hidden",
+        outline: "none",
+        ...props.style
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onKeyDown={onKeyDown}
     >
       {props.children}
@@ -107,10 +149,14 @@ export function FlowCanvas(props: FlowCanvasProps) {
               data-box-selection
               style={{
                 position: "absolute",
-                left: `${r().x - containerRect.left}px`,
-                top: `${r().y - containerRect.top}px`,
-                width: `${r().width}px`,
-                height: `${r().height}px`,
+                left: "0",
+                top: "0",
+                // Integer-pixel transform avoids subpixel paint artifacts
+                // (1 px strips) that appear when using fractional left/top.
+                transform: `translate(${Math.round(r().x - containerRect.left)}px, ${Math.round(r().y - containerRect.top)}px)`,
+                width: `${Math.round(r().width)}px`,
+                height: `${Math.round(r().height)}px`,
+                "will-change": "transform",
                 "pointer-events": "none",
                 background: "rgba(99, 149, 255, 0.08)",
                 border: "1px solid rgba(99, 149, 255, 0.7)",

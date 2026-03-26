@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import type { FlowStore } from "@thrum/core";
 import { getNodesInBox } from "@thrum/core";
+import { selectionPlugin } from "@thrum/core/plugins";
 
 export interface BoxSelectionRect {
   x: number;
@@ -19,39 +20,31 @@ function hasNodeAncestor(el: EventTarget | null): boolean {
 }
 
 export function createBoxSelection(store: FlowStore) {
-  let startX = 0;
-  let startY = 0;
-  let active = false;
+  const plugin = store.getPlugin(selectionPlugin);
   const [rect, setRect] = createSignal<BoxSelectionRect | null>(null);
+  let rafId = 0;
 
   function onPointerDown(e: PointerEvent) {
+    if (!plugin) return;
     if (e.button !== 0) return;
+    if (e.pointerType === "touch") return;
     if (hasNodeAncestor(e.target)) return;
-    startX = e.clientX;
-    startY = e.clientY;
-    active = true;
+    plugin.start(e.clientX, e.clientY);
     store.setSelectedNodes([]);
     store.setSelectedEdges([]);
   }
 
-  let selectionRaf = 0;
   function onPointerMove(e: PointerEvent) {
-    if (!active) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+    if (!plugin) return;
+    const r = plugin.update(e.clientX, e.clientY);
+    setRect(r);
+    if (!r) return;
 
-    setRect({
-      x: Math.min(startX, e.clientX),
-      y: Math.min(startY, e.clientY),
-      width: Math.abs(dx),
-      height: Math.abs(dy),
-    });
-
-    cancelAnimationFrame(selectionRaf);
+    cancelAnimationFrame(rafId);
+    const { x: startX, y: startY } = plugin.getStart();
     const endX = e.clientX;
     const endY = e.clientY;
-    selectionRaf = requestAnimationFrame(() => {
+    rafId = requestAnimationFrame(() => {
       const state = store.getState();
       const ids = getNodesInBox(state.nodes, state.viewport, { startX, startY, endX, endY });
       store.setSelectedNodes(ids);
@@ -59,7 +52,9 @@ export function createBoxSelection(store: FlowStore) {
   }
 
   function onPointerUp(_e: PointerEvent) {
-    active = false;
+    if (!plugin) return;
+    plugin.end();
+    cancelAnimationFrame(rafId);
     setRect(null);
   }
 

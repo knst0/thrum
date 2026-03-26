@@ -1,10 +1,9 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "src/plugins/index.ts"],
   platform: "neutral",
   dts: true,
-  sourcemap: true,
   clean: true,
   target: false,
 });

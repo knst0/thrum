@@ -17,6 +17,8 @@ import type {
   StoreChangeSet,
   InternalNode,
   NodeTypeDefinition,
+  FlowPlugin,
+  FlowPluginFactory,
 } from "./types.ts";
 import { toInternalNode, recomputeAbsolutePositions, recomputeSubtree, snapPosition, getNodesBoundingBox } from "./store/nodes";
 import { addToAdjacency, removeFromAdjacency, removeConnectedEdges, getConnected, getIncoming, getOutgoing } from "./store/edges";
@@ -38,6 +40,8 @@ export interface CreateFlowStoreOptions {
    *  connection and a read-only snapshot of the current store state so
    *  callers can check existing edges without needing a store reference. */
   isValidConnection?: (connection: Connection, state: Readonly<FlowStoreState>) => boolean;
+  /** Plugins to install on the store after creation. */
+  plugins?: FlowPlugin[];
 }
 
 export function createFlowStore(options: CreateFlowStoreOptions = {}): FlowStore {
@@ -583,7 +587,17 @@ export function createFlowStore(options: CreateFlowStoreOptions = {}): FlowStore
     },
     getNodeType: (type) => nodeTypeRegistry.get(type),
     hasNodeType: (type) => nodeTypeRegistry.has(type),
+    getPlugin<T>(factory: FlowPluginFactory<T, unknown[]>): T | undefined {
+      return pluginInstances.get(factory._key) as T | undefined;
+    },
   };
+
+  // ─── Install plugins ────────────────────────────────────────────────────
+  const pluginInstances = new Map<symbol, unknown>();
+  for (const plugin of options.plugins ?? []) {
+    const instance = plugin.install(store);
+    pluginInstances.set(plugin._key, instance);
+  }
 
   return store;
 }

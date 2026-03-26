@@ -3,7 +3,6 @@ import solid from "vite-plugin-solid";
 import tailwindcss from "@tailwindcss/vite";
 import mdx from "@mdx-js/rollup";
 import rehypeShiki from "@shikijs/rehype";
-import { resolve } from "path";
 
 export default defineConfig({
   plugins: [
@@ -19,10 +18,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: {
-      "@thrum/core": resolve(__dirname, "../../packages/core/src/index.ts"),
-      "@thrum/solid": resolve(__dirname, "../../packages/solid-adapter/src/index.ts"),
-    },
+    conditions: ["source"],
   },
   optimizeDeps: {
     exclude: ["@thrum/core", "@thrum/solid"],

@@ -27,6 +27,8 @@ export type {
   SerializedNode,
   SerializedEdge,
   FlowJSON,
+  FlowPlugin,
+  FlowPluginFactory,
 } from "./types";
 export { nodeId, edgeId, handleId } from "./types";
 
@@ -41,8 +43,6 @@ export type { DragState, DragContext } from "./drag";
 export { getNodesInBox, hitTestNode } from "./store/selection";
 export type { BoxSelection } from "./store/selection";
 export { serializeFlow, deserializeFlow } from "./serialization";
-export { History } from "./history";
-export type { HistoryEntry, HistoryChangeset } from "./history";
 
 export { screenToFlow, flowToScreen, clampZoom, zoomAroundPoint } from "./store/viewport";
 export { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from "./store/nodes";

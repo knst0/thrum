@@ -20,8 +20,7 @@
     "directory": "packages/core"
   },
   "files": [
-    "dist",
-    "!dist/**/*.map"
+    "dist"
   ],
   "type": "module",
   "sideEffects": false,
@@ -29,8 +28,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./plugins": {
+      "source": "./src/plugins/index.ts",
+      "types": "./dist/plugins/index.d.ts",
+      "default": "./dist/plugins/index.js"
     }
   },
   "scripts": {

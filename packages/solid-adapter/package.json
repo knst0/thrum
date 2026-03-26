@@ -21,8 +21,7 @@
     "directory": "packages/solid-adapter"
   },
   "files": [
-    "dist",
-    "!dist/**/*.map"
+    "dist"
   ],
   "type": "module",
   "sideEffects": false,
@@ -30,6 +29,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }

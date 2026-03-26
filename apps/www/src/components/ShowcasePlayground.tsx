@@ -1,28 +1,92 @@
 import { getBezierPath, createFlowStore, nodeId, edgeId, handleId } from "@thrum/core";
+import { selectionPlugin } from "@thrum/core/plugins";
 import { Flow, useLiveNode } from "@thrum/solid";
 import type { EdgeCoords } from "@thrum/solid";
 import type { EdgeBase, Connection } from "@thrum/core";
 import clsx from "clsx";
+import { Dynamic } from "solid-js/web";
+
+type NodeData = { label: string; nodeType?: "input" | "output" | "default" };
 
 const store = createFlowStore({
   nodes: [
-    { id: nodeId("input"), position: { x: 40, y: 100 }, data: { label: "Input" } },
+    { id: nodeId("input"), position: { x: 40, y: 100 }, data: { label: "Input", nodeType: "input" } },
     { id: nodeId("process"), position: { x: 220, y: 60 }, data: { label: "Process" } },
     { id: nodeId("filter"), position: { x: 220, y: 160 }, data: { label: "Filter" } },
-    { id: nodeId("output"), position: { x: 400, y: 100 }, data: { label: "Output" } },
+    { id: nodeId("output"), position: { x: 400, y: 100 }, data: { label: "Output", nodeType: "output" } },
   ],
   edges: [
-    { id: edgeId("1"), source: nodeId("input"), sourceHandle: handleId("out"), target: nodeId("process"), targetHandle: handleId("in") },
-    { id: edgeId("2"), source: nodeId("input"), sourceHandle: handleId("out"), target: nodeId("filter"), targetHandle: handleId("in") },
+    {
+      id: edgeId("1"),
+      source: nodeId("input"),
+      sourceHandle: handleId("out-top"),
+      target: nodeId("process"),
+      targetHandle: handleId("in"),
+    },
+    {
+      id: edgeId("2"),
+      source: nodeId("input"),
+      sourceHandle: handleId("out-bottom"),
+      target: nodeId("filter"),
+      targetHandle: handleId("in"),
+    },
     { id: edgeId("3"), source: nodeId("process"), sourceHandle: handleId("out"), target: nodeId("output"), targetHandle: handleId("in") },
   ],
+  plugins: [selectionPlugin()],
+  isValidConnection: (connection, state) =>
+    ![...state.edges.values()].some(
+      (e) =>
+        e.source === connection.source &&
+        (e.sourceHandle ?? null) === connection.sourceHandle &&
+        e.target === connection.target &&
+        (e.targetHandle ?? null) === connection.targetHandle,
+    ),
 });
 
-const handleClass =
-  "absolute size-2.5 rounded-full bg-(--color-gray-8) border-2 border-(--color-gray-6) cursor-crosshair";
+const handleClass = "absolute size-2.5 rounded-full bg-(--color-gray-8) border-2 border-(--color-gray-6) cursor-crosshair";
+
+type NodeComponentProps = { node: ReturnType<typeof useLiveNode<NodeData>> };
+
+function DefaultNodeContent(props: NodeComponentProps) {
+  return (
+    <>
+      <Flow.Handle type="target" id="in" class={clsx(handleClass, "-left-1.5 top-1/2 -translate-y-1/2")} />
+      {props.node().data.label}
+      <Flow.Handle type="source" id="out" class={clsx(handleClass, "-right-1.5 top-1/2 -translate-y-1/2")} />
+    </>
+  );
+}
+
+function InputNodeContent(props: NodeComponentProps) {
+  return (
+    <>
+      {props.node().data.label}
+      <Flow.Handle type="source" id="out-top" class={clsx(handleClass, "-right-1.5 top-1/4 -translate-y-1/2")} />
+      <Flow.Handle type="source" id="out-bottom" class={clsx(handleClass, "-right-1.5 top-3/4 -translate-y-1/2")} />
+    </>
+  );
+}
+
+function OutputNodeContent(props: NodeComponentProps) {
+  return (
+    <>
+      <Flow.Handle type="target" id="in-top" class={clsx(handleClass, "-left-1.5 top-1/4 -translate-y-1/2")} />
+      <Flow.Handle type="target" id="in-bottom" class={clsx(handleClass, "-left-1.5 top-3/4 -translate-y-1/2")} />
+      {props.node().data.label}
+    </>
+  );
+}
+
+const components = {
+  input: InputNodeContent,
+  output: OutputNodeContent,
+  default: DefaultNodeContent,
+};
 
 function NodeContent() {
-  const node = useLiveNode<{ label: string }>();
+  const node = useLiveNode<NodeData>();
+  const nodeType = () => node().data.nodeType ?? "default";
+
   return (
     <div
       class={clsx(
@@ -31,9 +95,7 @@ function NodeContent() {
         node().dragging ? "cursor-grabbing" : "cursor-grab",
       )}
     >
-      <Flow.Handle type="target" id="in" class={clsx(handleClass, "-left-1.5 top-1/2 -translate-y-1/2")} />
-      {node().data.label}
-      <Flow.Handle type="source" id="out" class={clsx(handleClass, "-right-1.5 top-1/2 -translate-y-1/2 bg-(--color-gray-11)")} />
+      <Dynamic component={components[nodeType()] || components.default} node={node} />
     </div>
   );
 }
@@ -53,7 +115,7 @@ function ShowcaseEdge(_edge: EdgeBase, coords: EdgeCoords, selected: boolean) {
 
 function handleConnect(c: Connection) {
   store.addEdge({
-    id: edgeId(`${c.source}-${c.target}`),
+    id: edgeId(`${c.source}-${c.sourceHandle ?? ""}-${c.target}-${c.targetHandle ?? ""}`),
     source: c.source,
     sourceHandle: c.sourceHandle ?? undefined,
     target: c.target,

@@ -184,6 +184,27 @@ export interface NodeTypeDefinition<TData = unknown> {
   validate?: (data: unknown) => data is TData;
 }
 
+// ─── Plugin system ────────────────────────────────────────────────────────────
+
+/**
+ * A plugin descriptor returned by a plugin factory. Pass to `plugins` in
+ * {@link CreateFlowStoreOptions}. Retrieve the installed instance later with
+ * `store.getPlugin(factory)`.
+ */
+export interface FlowPlugin<T = unknown> {
+  readonly _key: symbol;
+  install(store: FlowStore): T & { uninstall(): void };
+}
+
+/**
+ * A plugin factory — a callable that produces a {@link FlowPlugin} and also
+ * carries a static `_key` symbol so `store.getPlugin(factory)` can look up
+ * the installed instance with full type inference.
+ */
+export type FlowPluginFactory<T, TArgs extends unknown[] = unknown[]> = ((...args: TArgs) => FlowPlugin<T>) & {
+  readonly _key: symbol;
+};
+
 // ─── Internal store state ─────────────────────────────────────────────────────
 
 export interface FlowStoreState {
@@ -249,6 +270,11 @@ export interface FlowStore {
   /** Returns readonly views of child nodes. */
   getChildren(nodeId: NodeId): Readonly<InternalNode>[];
   isValidConnection(connection: Connection): boolean;
+  /**
+   * Returns the installed plugin instance for the given factory, or `undefined`
+   * if the plugin was not included in `CreateFlowStoreOptions.plugins`.
+   */
+  getPlugin<T>(factory: FlowPluginFactory<T, unknown[]>): T | undefined;
   screenToFlowPosition(point: XY): XY;
   flowToScreenPosition(point: XY): XY;
 }
