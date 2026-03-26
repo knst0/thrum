@@ -1,7 +1,6 @@
-import { Show, createSignal, onCleanup, onMount } from "solid-js";
+import { createSignal, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { useFlow } from "../context";
-import { createBoxSelection } from "../hooks/createBoxSelection";
 
 interface FlowCanvasProps {
   children: JSX.Element;
@@ -11,22 +10,12 @@ interface FlowCanvasProps {
 export function FlowCanvas(props: FlowCanvasProps) {
   const flow = useFlow();
   const { store } = flow;
-  const boxSel = createBoxSelection(store);
   // oxlint-disable-next-line no-unassigned-vars
   let ref!: HTMLDivElement;
   let isPanning = false;
   let lastPan = { x: 0, y: 0 };
   const activeTouchPointers = new Map<number, { x: number; y: number }>();
   const [isPinching, setIsPinching] = createSignal(false);
-
-  function isBackground(target: EventTarget | null): boolean {
-    let el = target as Element | null;
-    while (el && el !== ref) {
-      if ((el as HTMLElement).dataset?.nodeid !== undefined) return false;
-      el = el.parentElement;
-    }
-    return true;
-  }
 
   function onKeyDown(e: KeyboardEvent) {
     const state = store.getState();
@@ -63,13 +52,6 @@ export function FlowCanvas(props: FlowCanvasProps) {
       lastPan = { x: e.clientX, y: e.clientY };
       ref.setPointerCapture(e.pointerId);
       e.preventDefault();
-      return;
-    }
-
-    if (e.button === 0 && isBackground(e.target)) {
-      // Left drag on background → box selection
-      boxSel.onPointerDown(e);
-      ref.setPointerCapture(e.pointerId);
     }
   }
 
@@ -85,7 +67,6 @@ export function FlowCanvas(props: FlowCanvasProps) {
       lastPan = { x: e.clientX, y: e.clientY };
       return;
     }
-    boxSel.onPointerMove(e);
     if (store.getState().connectionStartHandle) {
       cancelAnimationFrame(connectionRaf);
       const pos = { x: e.clientX, y: e.clientY };
@@ -104,7 +85,6 @@ export function FlowCanvas(props: FlowCanvasProps) {
       isPanning = false;
       return;
     }
-    boxSel.onPointerUp(e);
     store.cancelConnection();
   }
 
@@ -117,7 +97,8 @@ export function FlowCanvas(props: FlowCanvasProps) {
     function onWheel(e: WheelEvent) {
       e.preventDefault();
       const factor = 1 - e.deltaY * 0.005;
-      store.zoomAroundPoint(factor, { x: e.clientX, y: e.clientY });
+      const { left, top } = ref.getBoundingClientRect();
+      store.zoomAroundPoint(factor, { x: e.clientX - left, y: e.clientY - top });
     }
     ref.addEventListener("wheel", onWheel, { passive: false });
     onCleanup(() => ref.removeEventListener("wheel", onWheel));
@@ -132,7 +113,7 @@ export function FlowCanvas(props: FlowCanvasProps) {
         inset: "0",
         overflow: "hidden",
         outline: "none",
-        ...props.style
+        ...props.style,
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -141,31 +122,6 @@ export function FlowCanvas(props: FlowCanvasProps) {
       onKeyDown={onKeyDown}
     >
       {props.children}
-      <Show when={boxSel.rect()}>
-        {(r) => {
-          const containerRect = ref.getBoundingClientRect();
-          return (
-            <div
-              data-box-selection
-              style={{
-                position: "absolute",
-                left: "0",
-                top: "0",
-                // Integer-pixel transform avoids subpixel paint artifacts
-                // (1 px strips) that appear when using fractional left/top.
-                transform: `translate(${Math.round(r().x - containerRect.left)}px, ${Math.round(r().y - containerRect.top)}px)`,
-                width: `${Math.round(r().width)}px`,
-                height: `${Math.round(r().height)}px`,
-                "will-change": "transform",
-                "pointer-events": "none",
-                background: "rgba(99, 149, 255, 0.08)",
-                border: "1px solid rgba(99, 149, 255, 0.7)",
-                "border-radius": "2px",
-              }}
-            />
-          );
-        }}
-      </Show>
     </div>
   );
 }

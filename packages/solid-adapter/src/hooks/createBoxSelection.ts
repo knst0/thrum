@@ -19,31 +19,37 @@ function hasNodeAncestor(el: EventTarget | null): boolean {
   return false;
 }
 
-export function createBoxSelection(store: FlowStore) {
+export function createBoxSelection(store: FlowStore, getContainer: () => HTMLElement) {
   const plugin = store.getPlugin(selectionPlugin);
   const [rect, setRect] = createSignal<BoxSelectionRect | null>(null);
   let rafId = 0;
 
-  function onPointerDown(e: PointerEvent) {
-    if (!plugin) return;
-    if (e.button !== 0) return;
-    if (e.pointerType === "touch") return;
-    if (hasNodeAncestor(e.target)) return;
-    plugin.start(e.clientX, e.clientY);
+  function toRelative(clientX: number, clientY: number): { x: number; y: number } {
+    const r = getContainer().getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  function onPointerDown(e: PointerEvent): boolean {
+    if (!plugin) return false;
+    if (e.button !== 0) return false;
+    if (e.pointerType === "touch") return false;
+    if (hasNodeAncestor(e.target)) return false;
+    const { x, y } = toRelative(e.clientX, e.clientY);
+    plugin.start(x, y);
     store.setSelectedNodes([]);
     store.setSelectedEdges([]);
+    return true;
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!plugin) return;
-    const r = plugin.update(e.clientX, e.clientY);
+    const { x: endX, y: endY } = toRelative(e.clientX, e.clientY);
+    const r = plugin.update(endX, endY);
     setRect(r);
     if (!r) return;
 
     cancelAnimationFrame(rafId);
     const { x: startX, y: startY } = plugin.getStart();
-    const endX = e.clientX;
-    const endY = e.clientY;
     rafId = requestAnimationFrame(() => {
       const state = store.getState();
       const ids = getNodesInBox(state.nodes, state.viewport, { startX, startY, endX, endY });
