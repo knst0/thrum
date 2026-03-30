@@ -11,14 +11,12 @@
     "lint:fix": "oxlint --fix",
     "prepublish": "bun run build",
     "publish:core": "bun publish --access public --cwd packages/core/",
-    "publish:solid": "bun publish --access public --cwd packages/solid-adapter/",
-    "test": "vitest run"
+    "publish:solid": "bun publish --access public --cwd packages/solid-adapter/"
   },
   "devDependencies": {
-    "oxfmt": "^0.41.0",
+    "oxfmt": "^0.42.0",
     "oxlint": "^1.56.0",
     "tsdown": "^0.21.4",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.2"
   }
 }

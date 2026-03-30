@@ -10,7 +10,7 @@ const mdxComponents: Record<string, (props: any) => JSX.Element> = {
   ol: (props) => <ol class="text-muted list-decimal list-inside space-y-1">{props.children}</ol>,
   li: (props) => (
     <li class="flex items-baseline gap-2">
-      <span class="text-gray-7 shrink-0 text-sm" aria-hidden="true">
+      <span class="text-gray-10 shrink-0 text-sm" aria-hidden="true">
         ⠿
       </span>
       <span>{props.children}</span>

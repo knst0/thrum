@@ -1,6 +1,7 @@
-import { createResource, createSignal, Show } from "solid-js";
-import { ShowcasePlayground } from "./ShowcasePlayground";
+import { createResource, createSignal, lazy, Show, Suspense } from "solid-js";
 import showcaseCode from "./ShowcasePlayground?raw";
+const ShowcasePlayground = lazy(() => import("./ShowcasePlayground").then((m) => ({ default: m.ShowcasePlayground })));
+
 let highlighterPromise: Promise<import("shiki/core").HighlighterCore> | null = null;
 
 function getHighlighter() {
@@ -54,7 +55,9 @@ export function Showcase() {
         when={showCode()}
         fallback={
           <div class="h-70">
-            <ShowcasePlayground />
+            <Suspense fallback={<div class="h-70 flex items-center justify-center text-muted text-xs">Loading…</div>}>
+              <ShowcasePlayground />
+            </Suspense>
           </div>
         }
       >
