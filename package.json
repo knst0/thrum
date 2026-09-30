@@ -5,18 +5,19 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run --filter './packages/*' build",
+    "build": "pnpm --filter \"./packages/*\" build",
+    "changeset": "changeset",
     "fmt": "oxfmt",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "prepublish": "bun run build",
-    "publish:core": "bun publish --access public --cwd packages/core/",
-    "publish:solid": "bun publish --access public --cwd packages/solid-adapter/"
+    "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.56.0",
-    "tsdown": "^0.21.4",
-    "typescript": "^6.0.2"
-  }
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "pnpm@12.8.1+sha512.f64ba907507f5ceafe06c8d38e6052d0179444580ec1279ddd5bfc11cb48aa8a2644b66598e07e761da84872a9fc57d5f902b87fa49d024198d558612aabbe45"
 }
